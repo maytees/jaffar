@@ -1,4 +1,6 @@
-import { colors, Confirm, Input } from "./depts.ts";
+import { colors, Confirm, Input, config } from "./depts.ts";
+
+config();
 
 await main();
 
