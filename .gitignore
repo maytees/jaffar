@@ -4,8 +4,6 @@ deno.lock
 
 settings.json
 
-.env
-
 build/
 
 screenshots/
