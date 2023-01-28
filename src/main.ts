@@ -1,39 +1,16 @@
 import { colors, config, Confirm, Input } from "./depts.ts";
 import puppeteer from "https://deno.land/x/puppeteer@16.2.0/mod.ts";
+import {
+  deleteScreenshots,
+  getSettings,
+  logCheck,
+  screenshotAlert,
+  Settings,
+} from "./helpers.ts";
 
 config();
 
 await main();
-
-function logCheck(msg: string) {
-  console.log(colors.bold.italic.cyan(msg + "  ✅"));
-}
-
-function screenshotAlert(msg: string) {
-  console.log(colors.bold.italic.red(msg + " ✅"));
-}
-
-function deleteScreenshots() {
-  const deleteCommand = Deno.run({
-    cmd: [
-      "rm",
-      "-rf",
-      "screenshots/*",
-    ],
-  });
-
-  deleteCommand.status();
-  deleteCommand.close();
-}
-
-interface Settings {
-  he_username: string;
-  he_password: string;
-}
-
-function getSettings(): Settings {
-  return JSON.parse(Deno.readTextFileSync("./settings.json"));
-}
 
 async function main() {
   deleteScreenshots();
