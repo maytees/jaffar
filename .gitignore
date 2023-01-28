@@ -2,4 +2,6 @@
 
 deno.lock
 
+.env
+
 build/

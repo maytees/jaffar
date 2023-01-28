@@ -26,3 +26,7 @@ async function main() {
     return;
   }
 }
+
+async function createHeCname(host: string, authcode:string) {
+
+}
