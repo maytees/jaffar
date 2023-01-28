@@ -26,6 +26,15 @@ function deleteScreenshots() {
   deleteCommand.close();
 }
 
+interface Settings {
+  he_username: string;
+  he_password: string;
+}
+
+function getSettings(): Settings {
+  return JSON.parse(Deno.readTextFileSync("./settings.json"));
+}
+
 async function main() {
   deleteScreenshots();
 
