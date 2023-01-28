@@ -32,7 +32,7 @@ Compile into build/
 
 `task build`
 
-Clean (removes deno.lock, .vscode, and build/)
+Clean (removes build/, and screenshots)
 
 `task clean`
 
