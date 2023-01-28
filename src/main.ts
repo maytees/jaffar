@@ -27,6 +27,8 @@ function deleteScreenshots() {
 }
 
 async function main() {
+  deleteScreenshots();
+
   // Ask for info about CNAME and auth code
   const host: string = await Input.prompt({
     message: "What is the hostname?",
