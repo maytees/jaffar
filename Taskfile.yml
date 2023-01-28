@@ -9,7 +9,7 @@ tasks:
   clean:
     desc: Remove excess files
     cmds:
-      - rm -rf ./build ./deno.lock ./.vscode 
+      - rm -rf ./build ./deno.lock ./.vscode ./screenshots/*
   run:
     desc: Run jaffar.
     cmds:
