@@ -15,6 +15,8 @@ await main();
 async function main() {
   deleteScreenshots();
 
+  const { he_password, he_username } = getSettings();
+
   // Ask for info about CNAME and auth code
   const host: string = await Input.prompt({
     message: "What is the hostname?",
@@ -38,16 +40,13 @@ async function main() {
     return;
   }
 
-  const username: string = Deno.env.get("HE_USERNAME") || "";
-  const password: string = Deno.env.get("HE_PASSWORD") || "";
-
   console.log(
     colors.bold.green(
       "Screenshots will be in consecutive order in screenshots/\n\n",
     ),
   );
 
-  createHeCname(host, authcode, username, password);
+  createHeCname(host, authcode, he_username, he_password);
 }
 
 async function createHeCname(
@@ -67,7 +66,7 @@ async function createHeCname(
   await page.goto("https://dns.he.net");
   logCheck("Went to dns.he.net");
 
-  const usernameField = await page.waitForSelector("input[name=email]");
+  await page.waitForSelector("input[name=email]");
   await page.$eval(
     "input[name=email]",
     (el, user: string) => el.value = user,
@@ -75,7 +74,7 @@ async function createHeCname(
   );
   logCheck("Put username into username field");
 
-  const passwordField = await page.waitForSelector("input[name=pass]");
+  await page.waitForSelector("input[name=pass]");
   await page.$eval(
     "input[name=pass]",
     (el, pass: string) => el.value = pass,
