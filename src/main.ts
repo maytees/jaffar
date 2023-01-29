@@ -1,11 +1,11 @@
-import { colors, config, Confirm, Input } from "./depts.ts";
+import { colors, config, Confirm, delay, Input, Select } from "./depts.ts";
 import puppeteer from "https://deno.land/x/puppeteer@16.2.0/mod.ts";
 import {
   deleteScreenshots,
+  Domain,
   getSettings,
   logCheck,
   screenshotAlert,
-  Settings,
 } from "./helpers.ts";
 
 config();
@@ -15,13 +15,24 @@ await main();
 async function main() {
   deleteScreenshots();
 
-  const { he_password, he_username } = getSettings();
+  const { he_password, he_username, domains } = getSettings();
 
   // Ask for info about CNAME and auth code
   const host: string = await Input.prompt({
-    message: "What is the hostname?",
-    hint: "Example: example.domain.com",
+    message: "What is the hostname? (this will be added to the domain)",
+    hint: "Example: examplehost",
   });
+
+  const selectedDomain: string = await Select.prompt({
+    message: "Select the domain you'd like to use",
+    options: domains.map((d: Domain): string => {
+      return d.domain;
+    }),
+  });
+
+  const domain: Domain | undefined = domains.find((d) =>
+    d.domain === selectedDomain
+  );
 
   const port: string = await Input.prompt({
     message: "What is the port number?",
@@ -33,9 +44,13 @@ async function main() {
   });
 
   console.log(
-    colors.bold.cyan(`Host: ${host}, port: ${port}, autcode: ${authcode}`),
+    colors.bold.cyan(
+      `Full domain: ${host}.${domain?.domain}, DomainId: ${domain?.id} Port: ${port}, Authcode: ${authcode}`,
+    ),
   );
+
   if (!await Confirm.prompt("Is the info above correct?")) {
+    console.log(colors.red.bold("Ok, we'll go back."));
     await main();
     return;
   }
@@ -57,6 +72,11 @@ async function createHeCname(
 ) {
   const browser = await puppeteer.launch({
     product: "chrome",
+    args: [`--window-size=1920,1080`],
+    defaultViewport: {
+      width: 1920,
+      height: 1080,
+    },
   });
   logCheck("Opened browser");
 
@@ -101,6 +121,8 @@ async function createHeCname(
   await page.waitForSelector("input[value=Submit]");
   await page.click("input[value=Submit]");
   logCheck("Put auth code into field");
+
+  await delay(2000);
 
   await page.screenshot({ path: "./screenshots/3.png" });
   screenshotAlert("Post-login page screenshot taken as 3.png");

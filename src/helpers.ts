@@ -21,9 +21,15 @@ export function deleteScreenshots() {
   deleteCommand.close();
 }
 
+export interface Domain {
+  domain: string;
+  id: string;
+}
+
 export interface Settings {
   he_username: string;
   he_password: string;
+  domains: Domain[];
 }
 
 export function getSettings(): Settings {
