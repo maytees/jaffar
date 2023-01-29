@@ -5,6 +5,7 @@ import {
   Domain,
   getSettings,
   logCheck,
+  progressLog,
   screenshotAlert,
   TTL,
   TTLOptions,
@@ -82,6 +83,7 @@ async function main() {
   );
 
   createHeCname(host, domain, timeTo, authcode, he_username, he_password);
+  progressLog("Finished Hurricane DNS 1/3")
 }
 
 async function createHeCname(

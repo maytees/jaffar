@@ -48,6 +48,10 @@ export const TTLOptions: TTL[] = [
   },
 ];
 
+export function progressLog(msg: string) {
+  console.log(colors.bold.italic.brightMagenta(msg + "  ✅"));
+}
+
 export function logCheck(msg: string) {
   console.log(colors.bold.italic.cyan(msg + "  ✅"));
 }
