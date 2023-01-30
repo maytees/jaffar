@@ -78,9 +78,18 @@ export interface Domain {
   id: string;
 }
 
+export interface OverrideValues {
+  v4: string;
+  v6: string;
+}
+
 export interface Settings {
   he_username: string;
   he_password: string;
+  opnsense_username: string;
+  opnsense_password: string;
+  opnsense_url: string;
+  override_values: OverrideValues;
   domains: Domain[];
   alwaysHourTTL: boolean;
 }

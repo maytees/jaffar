@@ -1,10 +1,11 @@
 import { colors, config, Confirm, delay, Input, Select } from "./depts.ts";
-import puppeteer from "https://deno.land/x/puppeteer@16.2.0/mod.ts";
+import puppeteer, { Page } from "https://deno.land/x/puppeteer@16.2.0/mod.ts";
 import {
   deleteScreenshots,
   Domain,
   getSettings,
   logCheck,
+  OverrideValues,
   progressLog,
   screenshotAlert,
   TTL,
@@ -18,7 +19,16 @@ await main();
 async function main() {
   deleteScreenshots();
 
-  const { he_password, he_username, domains, alwaysHourTTL } = getSettings();
+  const {
+    he_password,
+    he_username,
+    domains,
+    alwaysHourTTL,
+    opnsense_password,
+    opnsense_username,
+    opnsense_url,
+    override_values,
+  } = getSettings();
 
   // Ask for info about CNAME and auth code
   const host: string = await Input.prompt({
@@ -82,11 +92,161 @@ async function main() {
     ),
   );
 
-  createHeCname(host, domain, timeTo, authcode, he_username, he_password);
-  progressLog("Finished Hurricane DNS 1/3")
+  const browser = await puppeteer.launch({
+    product: "chrome",
+  });
+  logCheck("Opened browser");
+
+  const page: Page = await browser.newPage();
+  logCheck("Opened new page");
+
+  // createHeCname(page, host, domain, timeTo, authcode, he_username, he_password);
+  await progressLog("Finished Hurricane DNS - 1/3");
+
+  await opnsenseHostAlias(
+    page,
+    opnsense_url,
+    opnsense_username,
+    opnsense_password,
+    domain!.domain,
+    host,
+    override_values,
+  );
+
+  await browser.close();
+}
+
+async function opnsenseHostAlias(
+  page: Page,
+  url: string,
+  loginUsername: string,
+  loginPassword: string,
+  domain: string,
+  host: string,
+  override_values: OverrideValues,
+  description?: string,
+) {
+  // Log into opnsense
+  await page.goto(url);
+  logCheck("Went to " + url);
+
+  await page.waitForSelector("input[id=usernamefld]");
+  page.$eval("input[id=usernamefld]", (el, username: string) => {
+    el.value = username;
+  }, loginUsername);
+
+  await page.waitForSelector("input[id=passwordfld]");
+  page.$eval("input[id=passwordfld]", (el, password: string) => {
+    el.value = password;
+  }, loginPassword);
+  logCheck("Put in username & password into corresponding fields");
+
+  await page.screenshot({ path: "./screenshots/8.png" });
+  screenshotAlert("Took opnsense login screenshot as 8.png");
+
+  await page.waitForSelector("button[name=login]");
+  await page.click("button[name=login]");
+  logCheck("Clicked log in button");
+
+  await delay(3000);
+
+  await page.screenshot({ path: "./screenshots/9.png" });
+  screenshotAlert("Took main opnsense screenshot as 9.png");
+
+  await page.goto(url + "/ui/unbound/overrides/");
+  logCheck("Went to overrides page");
+
+  await delay(1000);
+
+  await page.screenshot({ path: "./screenshots/10.png" });
+  screenshotAlert("Took screenshot of overrides page as 10.png");
+
+  // Create alias for v4
+  const v4Selector = `input[type=checkbox][value=${override_values.v4}]`;
+  await page.waitForSelector(v4Selector);
+  await page.click(v4Selector);
+  logCheck("Clicked on v4 host override checkbox");
+
+  await page.screenshot({ path: "./screenshots/11.png" });
+  screenshotAlert("Took screenshot of v4 overrides");
+
+  await delay(1000);
+
+  await page.waitForSelector(
+    "#grid-aliases > tfoot > tr > td:nth-child(2) > button:nth-child(1)",
+  );
+  await page.click(
+    "#grid-aliases > tfoot > tr > td:nth-child(2) > button:nth-child(1)",
+  );
+
+  await delay(1000);
+
+  const hostnameValue = await page.$("#alias\\.hostname");
+  await hostnameValue?.type(host);
+
+  // await page.waitForSelector(hostnameSelector);
+  // await page.$eval(hostnameSelector, (el, hostname: string) => {
+  //   el.value = hostname;
+  // }, host);
+
+  const domainValue = await page.$("#alias\\.domain");
+  await domainValue?.type(domain);
+
+  // await page.waitForSelector(domainSelector);
+  // await page.$eval(domainSelector, (el, domain: string) => {
+  //   el.value = domain;
+  // }, domain);
+  logCheck("Put hostname value");
+
+  await page.click("#btn_DialogHostAlias_save");
+  logCheck("Saved v4 host alias");
+
+  await page.click("#reconfigureAct > b");
+  logCheck("Applied changes")
+
+  // Create alias for v6
+  const v6Selector = `input[type=checkbox][value=${override_values.v6}]`;
+  await page.waitForSelector(v6Selector);
+  await page.click(v6Selector);
+  logCheck("Clicked on v6 host override checkbox");
+
+  await delay(1000);
+
+  await page.click(
+    "#grid-aliases > tfoot > tr > td:nth-child(2) > button:nth-child(1)",
+  );
+
+  await delay(1000);
+
+  const hostnameValtwo = await page.$("#alias\\.hostname");
+  await hostnameValtwo?.type(host);
+
+  // await page.waitForSelector(hostnameSelector);
+  // await page.$eval(hostnameSelector, (el, hostname: string) => {
+  //   el.value = hostname;
+  // }, host);
+
+  const domainValtwo = await page.$("#alias\\.domain");
+  await domainValtwo?.type(domain);
+
+  // await page.waitForSelector(domainSelector);
+  // await page.$eval(domainSelector, (el, domain: string) => {
+  //   el.value = domain;
+  // }, domain);
+  logCheck("Put hostname value");
+
+  await page.click("#btn_DialogHostAlias_save");
+  logCheck("Saved v6 host alias");
+
+  await page.click("#reconfigureAct > b");
+  logCheck("Applied changes")
+
+  await page.screenshot({ path: "./screenshots/12.png" });
+  screenshotAlert("Took screenshot of overrides as 12.png");
 }
 
 async function createHeCname(
+  page: Page,
   host: string,
   domain: Domain | undefined,
   ttl: TTL | undefined,
@@ -94,14 +254,6 @@ async function createHeCname(
   username: string,
   password: string,
 ) {
-  const browser = await puppeteer.launch({
-    product: "chrome",
-  });
-  logCheck("Opened browser");
-
-  const page = await browser.newPage();
-  logCheck("Opened new page");
-
   await page.goto("https://dns.he.net");
   logCheck("Went to dns.he.net");
 
@@ -188,10 +340,8 @@ async function createHeCname(
 
   await page.click("#_hds");
   await delay(1000);
-  logCheck("Created CNAME!")
+  logCheck("Created CNAME!");
 
-  await page.screenshot({path: "./screenshots/7.png"});
+  await page.screenshot({ path: "./screenshots/7.png" });
   screenshotAlert("Post creation of cname taken as 7.png");
-
-  await browser.close();
 }
