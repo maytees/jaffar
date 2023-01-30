@@ -202,7 +202,7 @@ async function opnsenseHostAlias(
   logCheck("Saved v4 host alias");
 
   await page.click("#reconfigureAct > b");
-  logCheck("Applied changes")
+  logCheck("Applied changes");
 
   // Create alias for v6
   const v6Selector = `input[type=checkbox][value=${override_values.v6}]`;
@@ -239,7 +239,7 @@ async function opnsenseHostAlias(
   logCheck("Saved v6 host alias");
 
   await page.click("#reconfigureAct > b");
-  logCheck("Applied changes")
+  logCheck("Applied changes");
 
   await page.screenshot({ path: "./screenshots/12.png" });
   screenshotAlert("Took screenshot of overrides as 12.png");
