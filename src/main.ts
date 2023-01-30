@@ -100,8 +100,8 @@ async function main() {
   const page: Page = await browser.newPage();
   logCheck("Opened new page");
 
-  // createHeCname(page, host, domain, timeTo, authcode, he_username, he_password);
-  await progressLog("Finished Hurricane DNS - 1/3");
+  createHeCname(page, host, domain, timeTo, authcode, he_username, he_password);
+  progressLog("Finished Hurricane DNS - 1/3");
 
   await opnsenseHostAlias(
     page,
@@ -112,6 +112,7 @@ async function main() {
     host,
     override_values,
   );
+  progressLog("Finished OPNSense host alias creation - 2/3");
 
   await browser.close();
 }
