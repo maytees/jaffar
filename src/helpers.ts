@@ -92,6 +92,9 @@ export interface Settings {
   override_values: OverrideValues;
   domains: Domain[];
   alwaysHourTTL: boolean;
+  containerUsername: string;
+  containerIp: string;
+  containerPort: number;
 }
 
 export function getSettings(): Settings {

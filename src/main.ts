@@ -28,6 +28,9 @@ async function main() {
     opnsense_username,
     opnsense_url,
     override_values,
+    containerIp,
+    containerPort,
+    containerUsername,
   } = getSettings();
 
   // Ask for info about CNAME and auth code
@@ -70,13 +73,18 @@ async function main() {
     hint: "Example: 6183",
   });
 
+  const upstream_app: string = await Input.prompt({
+    message: "What is the upstream app ip?",
+    hint: "Example: 192.168.10.150",
+  });
+
   const authcode: string = await Input.prompt({
     message: "What is the auth code for HE DNS",
   });
 
   console.log(
     colors.bold.magenta(
-      `Full domain: ${host}.${domain?.domain}, DomainId: ${domain?.id}, TTL: ${timeTo?.name}, Port: ${port}, Authcode: ${authcode}`,
+      `Full domain: ${host}.${domain?.domain}, DomainId: ${domain?.id}, TTL: ${timeTo?.name}, Port: ${port}, Upstream app: ${upstream_app}, Authcode: ${authcode}`,
     ),
   );
 
@@ -114,7 +122,30 @@ async function main() {
   );
   progressLog("Finished OPNSense host alias creation - 2/3");
 
+  await nginx_conf(
+    host,
+    domain!,
+    port,
+    upstream_app,
+  );
+
   await browser.close();
+}
+
+async function nginx_conf(
+  host: string,
+  domain: Domain,
+  port: string,
+  upstream_app: string,
+) {
+  const file_content =
+    `server {\tlisten 443 ssl;\n\tlisten [::]:443 ssl;\n\t#change server name\n\tserver_name ${host}.${domain.domain};\n\n\tinclude /config/nginx/ssl.conf;\n\n\tclient_max_body_size 0;\n\n\tlocation / {\n\t\t# update server info\n\t\tinclude /config/nginx/proxy.conf;\n\t\tresolver 127.00.11 valid=30s;\n\t\tset $upstream_app ${upstream_app};\n\t\tset $upstream_proto ${port};\n\t\tset $upstream_proto http;\n\t\tproxy_pass $upstream_proto://$upstream_app:$upstream_port;\n\n\t}\n}`;
+
+  const file = await Deno.writeTextFile(
+    `output/file.txt`,
+    file_content,
+  );
+  logCheck("Put swag config in output/file.txt take it to you destination");
 }
 
 async function opnsenseHostAlias(
